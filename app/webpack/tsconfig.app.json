@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.json", // สืบทอดค่าพื้นฐาน (เช่น path alias @/*) มาจากไฟล์หลัก
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo", // cache ไฟล์ช่วยให้ build เร็วขึ้น
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"], // สำคัญ: โหลด Type ของ Browser DOM มาใช้
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true, // ให้ Vite ทำหน้าที่สร้างไฟล์ .js แทน TypeScript (TS มีหน้าที่แค่ตรวจ Type)
+    "jsx": "react-jsx", // ถ้าใช้ React
+
+    /* Linting (ความเข้มงวดในการตรวจจับ Error) */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"] // ระบุว่า Config นี้ใช้กับ Folder src เท่านั้น
+}

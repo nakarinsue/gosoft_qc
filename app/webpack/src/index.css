@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+/* ลบ @import "tw-animate-css" ออกหากติดตั้ง package tailwindcss-animate แล้ว */
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  :root {
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    /* ปรับโทนสีหลักให้เป็น Slate Neutral */
+    --brand-primary: #3b82f6; 
+  }
+
+  body {
+    font-family: var(--font-sans);
+    /* Light Mode: เปลี่ยนจากขาวจ้าเป็นเทาอ่อนนุ่มนวล (Slate 50) */
+    @apply antialiased bg-slate-50 text-slate-800 transition-colors duration-300;
+  }
+
+  .dark body {
+    /* Dark Mode: เปลี่ยนจากดำสนิทเป็นเทาเข้มถ่าน (Slate 900) */
+    @apply bg-slate-900 text-slate-100;
+  }
+}
+
+/* Custom Scrollbar ให้ดูซอฟต์ลง */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-brand-primary: var(--brand-primary);
+  /* Mapping shadcn variables */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  --radius: 1rem; /* เพิ่มความโค้งมนให้ดูทันสมัย */
+  
+  /* --- Light Mode (Neutral Soft) --- */
+  --background: oklch(35.233% 0.00004 271.152); /* Slate 50 - เทาเกือบขาว */
+  --foreground: oklch(0.25 0.02 256.39); /* Slate 800 - เทาเข้ม */
+  
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.02 256.39);
+  
+  --primary: oklch(0.55 0.18 250.27); /* Blue 600 */
+  --primary-foreground: oklch(0.98 0.01 256.39);
+  
+  --muted: oklch(0.92 0.01 256.39); /* Slate 100 */
+  --muted-foreground: oklch(0.55 0.02 256.39); /* Slate 500 */
+  
+  --border: oklch(0.89 0.01 256.39); /* Slate 200 */
+  --input: oklch(0.89 0.01 256.39);
+  --ring: oklch(0.55 0.18 250.27 / 30%);
+}
+
+.dark {
+  /* --- Dark Mode (Charcoal Neutral) --- */
+  --background: oklch(0.25 0.02 256.39); /* Slate 800 - เทาเข้มคาร์โคล ไม่ดำมืด */
+  --foreground: oklch(0.98 0.01 256.39); /* Slate 50 */
+  
+  --card: oklch(0.21 0.02 256.39); /* Slate 850/900 - พื้นหลังการ์ดเข้มกว่าพื้นหลังนิดหน่อย */
+  --card-foreground: oklch(0.98 0.01 256.39);
+  
+  --primary: oklch(0.7 0.12 250.27); /* Blue 400 - สีฟ้าที่สว่างขึ้นในโหมดมืด */
+  --primary-foreground: oklch(0.2 0.02 256.39);
+  
+  --muted: oklch(0.32 0.02 256.39); /* Slate 700 */
+  --muted-foreground: oklch(0.7 0.02 256.39); /* Slate 300 */
+  
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.7 0.12 250.27 / 50%);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+}

@@ -1,0 +1,159 @@
+version: 0.0.1
+
+services:
+
+  # backends:
+  #   build: 
+  #     context: ..
+  #     dockerfile: docker/Dockerfile.backend
+  #   image: nakarinsu/api_promotion:latest
+  #   pull_policy: build
+  #   platform: linux/amd64
+  #   hostname: api.promotion-css
+  #   container_name: api_apps
+  #   restart: always
+  #   ports:
+  #     - "8000:8000"
+  #   env_file:
+  #     - ./../production.env
+  #   volumes:
+  #     - data_center:/var/opt/backends    
+  #   environment:
+  #     - TZ=Asia/Bangkok
+  #     - ENVIRONMENT=prod
+  #   depends_on:
+  #     - mssqlservers
+  #   networks:
+  #     - bridge_network
+  #   stop_grace_period: 30s
+    
+  # frontends:
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/Dockerfile.frontend
+  #   image: nakarinsu/web_promotion:latest
+  #   pull_policy: build
+  #   container_name: web_apps
+  #   platform: linux/amd64
+  #   hostname: web.promotion-css
+  #   restart: always
+  #   env_file:
+  #     - ./../production.env
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - data_center:/var/opt/frontends    
+  #   depends_on:
+  #     - backends
+  #   networks:
+  #     - bridge_network
+    
+  # mssqlservers:
+  #   image: mcr.microsoft.com/mssql/server:2022-latest
+  #   container_name: mssqlservers
+  #   hostname: mssqlservers
+  #   platform: linux/amd64
+  #   restart: always
+  #   user: root
+  #   environment:
+  #     - ACCEPT_EULA=Y 
+  #     - MSSQL_SA_PASSWORD=${DB_SQL_PASSWORD}
+  #     - MSSQL_PID=Standard
+  #     - TZ=Asia/Bangkok
+  #   ports:
+  #     - "1433:1433"
+  #   volumes:
+  #     - data_center:/var/opt/mssql        
+  #     - D:/Docker_Data/mssql/io_share:/var/opt/mssql/io_share
+  #   networks:
+  #     - bridge_network
+  #   healthcheck:
+  #     test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${DB_SQL_PASSWORD}", "-Q", "SELECT 1"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 10
+  #     start_period: 60s
+
+  # minios:
+  #   image: minio/minio:latest
+  #   pull_policy: always
+  #   container_name: minio_servers
+  #   hostname: minios
+  #   restart: always
+  #   env_file:
+  #     - ./../production.env
+  #   command: server /data/local-bucket-share --console-address ":9001"
+  #   ports:
+  #     - "9000:9000" 
+  #     - "9001:9001" 
+      
+  #   volumes:
+  #     - data_center:/data                
+  #     - D:/Docker_Data/minio/share:/data/local-bucket-share 
+  #   networks:
+  #     - bridge_network
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 1G
+  #         cpus: '1.0'
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+  #     interval: 30s
+  #     timeout: 20s
+  #     retries: 3
+
+  # dozzles:
+  #   image: amir20/dozzle:latest
+  #   pull_policy: always
+  #   container_name: dozzles
+  #   restart: always
+  #   ports:
+  #     - "8888:8080"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   networks:
+  #     - bridge_network
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 128M
+  #         cpus: '0.25'
+
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: qc_gosoft_postgres
+  #   environment:
+  #     POSTGRES_USER: sa
+  #     POSTGRES_PASSWORD: Admin2000
+  #     POSTGRES_DB: PROMOTION
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - data_center:/var/lib/postgresql/data
+  #     - D:/Docker_Data/pgdata:/var/lib/postgresql/data
+  #   networks:
+  #     - bridge_network
+  #   restart: always
+
+  jupyter:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.jupyter
+    ports:
+      - 8889:8888
+    volumes:
+      - jupyter-data:/home/jovyan/work
+    command: start-notebook.py --NotebookApp.token='nakarinsue'
+
+
+
+networks:
+  bridge_network:
+    driver: bridge
+
+volumes:
+  data_center:
+
+  jupyter-data: 
+    name: jupyter-data

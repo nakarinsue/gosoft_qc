@@ -1,0 +1,42 @@
+# Node dependencies (ติดตั้งใน container เท่านั้น)
+node_modules
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Git & VCS
+.git
+.gitignore
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode
+.idea
+*.swp
+
+# Docker files that shouldn't be copied
+Dockerfile
+docker-compose.yml
+
+# Test / local only
+coverage
+tests
+__tests__
+
+# Build cache / temp
+.tmp
+.cache
+
+src
+
