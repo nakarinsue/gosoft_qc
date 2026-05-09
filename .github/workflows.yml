@@ -1,0 +1,22 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+
+name: Run Python Script
+on: [push] # ให้ทำงานเมื่อมีการ push code
+
+jobs:
+  run-my-code:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: Run Script
+        env:
+          # สำคัญ: ชื่อซ้ายคือชื่อที่จะใช้ใน Python | ชื่อขวาคือชื่อที่ตั้งใน GitHub Secrets
+          MY_API_KEY: ${{ secrets.MY_API_KEY_NAME }}
+        run: python main.py
