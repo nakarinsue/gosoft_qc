@@ -1,7 +1,9 @@
 // components/versions/CreateVersionModal.jsx
 import React, { useState, useEffect } from 'react';
-import { versionApi } from '../../services/api/version.api';
 import { X, PlusCircle } from 'lucide-react';
+
+// 📍 นำเข้า API Service กลาง (แทน versionApi)
+import apiService from '../../services/apiServices';
 
 // ฟังก์ชันคำนวณค่าเริ่มต้นของวันที่
 const getDefaultValues = () => {
@@ -18,9 +20,10 @@ const getDefaultValues = () => {
 
   return {
     sr_no: `${currentYear} / `,
-    title: `โปรโมชั่น รอบเดือน ${nextMonthName}`,
-    sub_title: '',
-    detail: '',
+    // แก้ไข: แปลงปีเป็น String แล้วใช้ .slice(-2) เพื่อดึงตัวเลข 2 หลักสุดท้าย
+    title: `${currentYear.toString().slice(-2)}00${nextMonthIndex+1}`,
+    sub_title: `โปรโมชั่น รอบเดือน ${nextMonthName}`,
+    detail: 'โปรโมชั่น',
     sr_link_url: '',
     lp_no: '00000'
   };
@@ -55,11 +58,13 @@ const CreateVersionModal = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await versionApi.create(formData);
+      // 📍 เรียกใช้ apiService กลาง สำหรับสร้าง Version
+      await apiService.versions.create(formData);
+      
       onSuccess();
       onClose();
     } catch (error) {
-      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      alert(`เกิดข้อผิดพลาดในการบันทึกข้อมูล: ${error.message || ''}`);
     } finally {
       setIsSubmitting(false);
     }

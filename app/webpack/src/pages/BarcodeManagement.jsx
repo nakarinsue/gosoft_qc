@@ -3,6 +3,9 @@ import { Search, RefreshCw, PieChart, AlertTriangle, Box, CheckCircle, Loader2 }
 import { PieChart as ReChartPie, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Swal from 'sweetalert2';
 
+// 📍 นำเข้า API Service กลาง
+import apiService from '../services/apiServices'; 
+
 export default function BarcodeManagement() {
   // --- States ---
   const [data, setData] = useState([]);
@@ -30,9 +33,8 @@ export default function BarcodeManagement() {
   const fetchInitialData = async () => {
     setIsTableLoading(true);
     try {
-      const response = await fetch(`/V2/Product/missing-barcodes?v_id=${versionId}`);
-      if (!response.ok) throw new Error('Network response was not ok');
-      const result = await response.json();
+      // 📍 เรียกใช้ apiService แทน fetch เดิม
+      const result = await apiService.products.getMissingBarcodes(versionId);
       
       if (result.status === "success" && result.data) {
         const formattedData = result.data.map((item, index) => ({
@@ -44,7 +46,7 @@ export default function BarcodeManagement() {
         setFilteredData(formattedData);
       }
     } catch (error) {
-      console.error("Fetch Data Error:", error);
+      console.error("Fetch Data Error:", error.message);
     } finally {
       setIsTableLoading(false);
     }
@@ -83,13 +85,8 @@ export default function BarcodeManagement() {
         pro_ids: item.pro_id
       };
 
-      const response = await fetch(`/V2/Product/update-barcode`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) throw new Error('Update failed');
+      // 📍 เรียกใช้ apiService 
+      await apiService.products.updateBarcode(payload);
 
       Swal.fire({
         icon: 'success',
@@ -107,7 +104,7 @@ export default function BarcodeManagement() {
 
     } catch (error) {
       console.error("Update Error:", error);
-      Swal.fire('ข้อผิดพลาด', 'ไม่สามารถอัปเดตบาร์โค้ดได้', 'error');
+      Swal.fire('ข้อผิดพลาด', error.message || 'ไม่สามารถอัปเดตบาร์โค้ดได้', 'error');
     } finally {
       setUpdatingId(null);
     }
@@ -133,19 +130,15 @@ export default function BarcodeManagement() {
 
     try {
       const payload = { store_code: storeCode, items: itemsToCheck };
-      const response = await fetch(`/V2/Product/check-barcodes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) throw new Error('Check failed');
+      
+      // 📍 เรียกใช้ apiService
+      await apiService.products.checkBarcodes(payload);
 
       Swal.fire('สำเร็จ!', 'ตรวจสอบข้อมูลเรียบร้อยแล้ว', 'success');
       fetchInitialData();
     } catch (error) {
       console.error("Check Barcode Error:", error);
-      Swal.fire('ข้อผิดพลาด', 'เกิดปัญหาในการตรวจสอบข้อมูล', 'error');
+      Swal.fire('ข้อผิดพลาด', error.message || 'เกิดปัญหาในการตรวจสอบข้อมูล', 'error');
     }
   };
 
@@ -156,9 +149,8 @@ export default function BarcodeManagement() {
     Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     
     try {
-      const response = await fetch(`/V2/Product/summary?v_id=${versionId}`);
-      if (!response.ok) throw new Error('Summary fetch failed');
-      const result = await response.json();
+      // 📍 เรียกใช้ apiService
+      const result = await apiService.products.getSummary(versionId);
 
       if (result.status === "success") {
         setSummaryData(result.data);
@@ -167,7 +159,7 @@ export default function BarcodeManagement() {
       }
     } catch (error) {
       console.error("Summary Error:", error);
-      Swal.fire('ข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลสรุปได้', 'error');
+      Swal.fire('ข้อผิดพลาด', error.message || 'ไม่สามารถดึงข้อมูลสรุปได้', 'error');
     }
   };
 
@@ -208,19 +200,14 @@ export default function BarcodeManagement() {
             user_id: userId
           };
 
-          const response = await fetch(`/V2/transactions/defect-product`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          if (!response.ok) throw new Error('Defect failed');
+          // 📍 เรียกใช้ apiService
+          await apiService.products.defectProduct(payload);
 
           Swal.fire('บันทึกสำเร็จ!', 'ทำรายการ Defect เรียบร้อยแล้ว', 'success');
           fetchInitialData();
         } catch (error) {
           console.error("Defect Error:", error);
-          Swal.fire('ข้อผิดพลาด', 'ไม่สามารถทำรายการ Defect ได้', 'error');
+          Swal.fire('ข้อผิดพลาด', error.message || 'ไม่สามารถทำรายการ Defect ได้', 'error');
         }
       }
     });
@@ -240,7 +227,6 @@ export default function BarcodeManagement() {
       <div className="max-w-7xl mx-auto w-full h-full flex flex-col flex-1 min-h-0 gap-4">
         
         {/* Header (ล็อคความสูงตามเนื้อหา) */}
-
 
         {/* ตรวจสอบสถานะการโหลดข้อมูล */}
         {isTableLoading ? (

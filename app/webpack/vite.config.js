@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {"@": path.resolve(__dirname, "./src"),
       },},
+      
     build: {
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
@@ -31,37 +32,37 @@ export default defineConfig(({ mode }) => {
       host: true,
       port: 4001,
       proxy: {
-        '/API': {
-          target: 'http://localhost:8000/API/V1', 
+        '/API/V1': {
+          target: 'http://localhost:8001', 
           changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/API/, '')
+        rewrite: (path) => path.replace('', '')
         },
-        '/V2': {
-        target: 'http://localhost:8001', // โดเมนของ Backend
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/V2/, '')
-        },
-        '/V1': {
-        target: 'http://localhost:8005', // โดเมนของ Backend
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/V2/, '')
-        },
+        // '/V2': {
+        // target: 'http://localhost:8001', // โดเมนของ Backend
+        // changeOrigin: true,
+        // rewrite: (path) => path.replace(/^\/V2/, '')
+        // },
+        // '/V1': {
+        // target: 'http://localhost:8001', // โดเมนของ Backend
+        // changeOrigin: true,
+        // rewrite: (path) => path.replace(/^\/V2/, '')
+        // },
       },
     },
     preview: {
       host: true,
       port: 4001,
       proxy: {
-        '/API': {
-          target: 'http://localhost:8000/API/V1', 
+        '/API/V1': {
+          target: 'http://localhost:8001', 
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/API/, '')
         },
-        '/V2': {
-        target: 'http://localhost:8001', // โดเมนของ Backend
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/V2/, '')
-        },
+        // '/V2': {
+        // target: 'http://localhost:8001', // โดเมนของ Backend
+        // changeOrigin: true,
+        // rewrite: (path) => path.replace(/^\/V2/, '')
+        // },
       },
     },
   }

@@ -1,7 +1,9 @@
 // components/versions/EditVersionModal.jsx
 import React, { useState, useEffect } from 'react';
-import { versionApi } from '../../services/api/version.api';
 import { ExternalLink, X, Save } from 'lucide-react';
+
+// 📍 นำเข้า API Service กลาง (แทน versionApi)
+import apiService from '../../services/apiServices';
 
 const EditVersionModal = ({ isOpen, onClose, onSuccess, versionData }) => {
   const [formData, setFormData] = useState({ 
@@ -47,11 +49,14 @@ const EditVersionModal = ({ isOpen, onClose, onSuccess, versionData }) => {
         status: formData.status,
         detail: formData.detail
       };
-      await versionApi.update(versionData.id, payload);
+      
+      // 📍 เรียกใช้ apiService กลาง สำหรับการอัปเดต Version
+      await apiService.versions.update(versionData.id, payload);
+      
       onSuccess();
       onClose();
     } catch (error) {
-      alert('เกิดข้อผิดพลาดในการอัปเดตข้อมูล');
+      alert(`เกิดข้อผิดพลาดในการอัปเดตข้อมูล: ${error.message || ''}`);
     } finally {
       setIsSubmitting(false);
     }

@@ -6,7 +6,9 @@ import {
   Banknote, Clock, AlertTriangle, FileSpreadsheet
 } from 'lucide-react';
 import { cn } from '../cn';
-import couponService from '../services/couponService';
+
+// 📍 นำเข้า API Service กลาง (ลบ couponService ออก)
+import apiService from '../services/apiServices';
 
 export default function CouponManagement({ actions }) {
   // Data States
@@ -53,11 +55,15 @@ export default function CouponManagement({ actions }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await couponService.getData();
+      // 📍 เรียกใช้ apiService กลาง
+      const res = await apiService.coupons.getData();
       
-      if (Array.isArray(res) && res.length > 0) {
+      // Axios ส่งข้อมูลกลับมาให้ตรงๆ ผ่าน Interceptor แต่อาจจะต้องเช็คโครงสร้าง .data เพิ่มเติมถ้ามี
+      const dataList = res?.data || res || [];
+      
+      if (Array.isArray(dataList) && dataList.length > 0) {
         // เรียงลำดับจาก Version มากไปน้อย
-        const sortedData = res.sort((a, b) => Number(b.version) - Number(a.version));
+        const sortedData = dataList.sort((a, b) => Number(b.version) - Number(a.version));
         setAllVersions(sortedData);
         
         // เลือก Version สูงสุดเป็นค่าเริ่มต้น ถ้ายังไม่ได้เลือก
@@ -68,7 +74,8 @@ export default function CouponManagement({ actions }) {
         setAllVersions([]);
       }
     } catch (err) {
-      setError("ไม่สามารถเชื่อมต่อ API หรือโครงสร้างข้อมูลไม่ถูกต้อง");
+      // 📍 ดึง Error Message จาก Service กลางมาแสดง
+      setError(err.message || "ไม่สามารถเชื่อมต่อ API หรือโครงสร้างข้อมูลไม่ถูกต้อง");
     } finally {
       setLoading(false);
     }
@@ -140,14 +147,16 @@ export default function CouponManagement({ actions }) {
       .map(i => i.promotion_code);
 
     try {
-      await couponService.assignOwner(assignName, selectedPromoCodes);
+      // 📍 เรียกใช้ apiService กลาง สำหรับส่งคำสั่ง Assign
+      await apiService.coupons.assignOwner(assignName, selectedPromoCodes);
+      
       alert(`มอบหมายงานให้ ${assignName} เรียบร้อยแล้ว`);
       setShowAssignModal(false);
       setAssignName('');
       setSelectedFiles([]);
       fetchData(); 
     } catch (err) {
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+      alert(err.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
   };
 
@@ -471,7 +480,7 @@ export default function CouponManagement({ actions }) {
         </div>
       </div>
 
-      {/* Floating Action Bar (Code เดิม) */}
+      {/* Floating Action Bar */}
       {selectedFiles.length > 0 && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-xl shadow-2xl rounded-[2rem] p-3 pl-6 flex items-center gap-6 z-50 animate-in slide-in-from-bottom-10 border border-slate-800">
             <div className="flex items-center gap-3 border-r border-slate-700 pr-6">
@@ -485,7 +494,7 @@ export default function CouponManagement({ actions }) {
         </div>
       )}
 
-      {/* Assign Modal (Code เดิม) */}
+      {/* Assign Modal */}
       {showAssignModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl border border-slate-100 animate-in zoom-in-95">

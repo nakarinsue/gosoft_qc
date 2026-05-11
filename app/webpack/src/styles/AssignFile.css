@@ -1,0 +1,79 @@
+/* --- AssignFile.css --- */
+
+/* ลบเส้นขอบตารางและเพิ่มความโค้งมน */
+.custom-datatable .p-datatable-wrapper {
+    border-radius: 1.5rem;
+    border: none !important;
+    /* 📍 บังคับให้ส่วนเนื้อหาตาราง (Body) กินพื้นที่ว่างและ Scroll ได้ */
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+
+/* แต่ง Header ตารางให้ดูพรีเมียม (ตัวพิมพ์ใหญ่ เว้นช่องไฟ) */
+.custom-datatable .p-datatable-thead > tr > th {
+    background-color: #f8fafc !important; /* slate-50 */
+    color: #64748b !important; /* slate-500 */
+    font-weight: 900 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 11px;
+    padding: 1.25rem 1.5rem !important;
+    border: none !important;
+    border-bottom: 2px solid #e2e8f0 !important; /* slate-200 */
+}
+
+/* แต่ง Row ภายในตาราง (ใช้เส้นประคั่น) */
+.custom-datatable .p-datatable-tbody > tr {
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.custom-datatable .p-datatable-tbody > tr > td {
+    padding: 1.25rem 1.5rem !important;
+    border: none !important;
+    border-bottom: 1px dashed #e2e8f0 !important; /* slate-200 */
+}
+
+/* Hover Effect ที่นุ่มนวล */
+.custom-datatable .p-datatable-tbody > tr:hover {
+    background-color: #f8fafc !important; /* slate-50 */
+}
+
+/* ซ่อนเส้นตารางแนวตั้ง */
+.custom-datatable.p-datatable-gridlines .p-datatable-tbody > tr > td {
+    border-width: 0 0 1px 0 !important;
+}
+
+/* 📍 ล็อก Paginator ให้อยู่ด้านล่างสุดเสมอ */
+.custom-datatable .p-paginator-bottom {
+    background-color: transparent !important;
+    border: none !important;
+    border-top: 1px solid #f1f5f9 !important; /* เส้นคั่นบางๆ กันกลืนกับเนื้อหา */
+    margin-top: auto; /* ดันลงล่างสุด */
+    padding: 1rem 0 0.5rem 0;
+    flex: 0 0 auto;
+}
+.custom-datatable .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+    background-color: #eef2ff !important; /* indigo-50 */
+    color: #4f46e5 !important; /* indigo-600 */
+    font-weight: 900;
+    border-radius: 0.75rem;
+}
+
+/* แต่ง Dropdown ให้โค้งมนสวยงาม */
+.custom-dropdown.p-dropdown {
+    border-radius: 1rem;
+    border: 2px solid #e2e8f0;
+    box-shadow: none !important;
+    transition: all 0.2s;
+}
+.custom-dropdown.p-dropdown:not(.p-disabled):hover {
+    border-color: #cbd5e1;
+}
+.custom-dropdown.p-dropdown.p-focus {
+    border-color: #818cf8; /* indigo-400 */
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.1) !important;
+}
+.custom-dropdown .p-dropdown-label {
+    font-weight: 900;
+    font-size: 12px;
+    color: #334155; /* slate-700 */
+}

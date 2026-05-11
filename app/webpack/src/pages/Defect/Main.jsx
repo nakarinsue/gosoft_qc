@@ -93,7 +93,7 @@ const HistoryModal = ({ isOpen, onClose, onSelect }) => {
 
     try {
       // MOCK DATA
-      const response = await fetch(`${API_BASE_URL}/PROMOTION/SEARCH`);
+      const response = await fetch(`${API_BASE_URL}/promotions/search`);
       if (!response.ok) {
          if (response.status === 404) throw new Error('ติดต่อ Server ไม่ได้');
          throw new Error(`Error: ${response.status}`);

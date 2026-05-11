@@ -1,0 +1,11 @@
+requests
+oracledb
+lxml
+pandas
+xmltodict
+openpyxl
+ipywidgets
+faker
+qgrid
+icecream
+itables

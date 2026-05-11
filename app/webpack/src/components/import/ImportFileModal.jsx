@@ -1,24 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { X, CloudUpload, Trash2, FileSpreadsheet, PlayCircle, Loader2, CheckCircle2 } from 'lucide-react';
-import { workspaceApi } from '../../services/api/workspace.api';
+import { X, CloudUpload, Trash2, FileSpreadsheet, Loader2, CheckCircle2 } from 'lucide-react';
+
+// 📍 นำเข้า API Service กลาง (อิงจาก apiService.js ของจริง)
+import apiService from '../../services/apiServices';
 
 const ImportFileModal = ({ isOpen, onClose, onSuccess, currentUserId = 1 }) => {
   const [versions, setVersions] = useState([]);
-  const [selectedVersion, setSelectedVersion] = useState('');
+  const [selectedVersions, setSelectedVersion] = useState('');
   const [selectedSystem, setSelectedSystem] = useState('1'); 
   const [filesData, setFilesData] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressMsg, setProgressMsg] = useState('');
 
+  // โหลดข้อมูล Versions เมื่อเปิด Modal
   useEffect(() => {
     if (isOpen) {
-      workspaceApi.getVersions().then(data => {
-        setVersions(data || []);
-        if (data && data.length > 0) {
-          const savedVer = localStorage.getItem('selectedVersion');
-          setSelectedVersion(savedVer || String(data[0].id));
-        }
-      });
+      // 📍 เรียกใช้ apiService หมวด versions
+      apiService.versions.getAll()
+        .then(res => {
+          const data = res?.data || res || [];
+          
+          // เรียงเวอร์ชันใหม่ไปเก่า (ถ้ามี field id)
+          const sortedVersions = [...data].sort((a, b) => b.id - a.id);
+          setVersions(sortedVersions);
+          
+          if (sortedVersions && sortedVersions.length > 0) {
+            const savedVer = localStorage.getItem('selectedVersion');
+            setSelectedVersion(savedVer || String(sortedVersions[0].id));
+          }
+        })
+        .catch(err => console.error("Error fetching versions:", err));
+        
       setFilesData([]);
       setSelectedSystem('1');
     }
@@ -36,55 +48,113 @@ const ImportFileModal = ({ isOpen, onClose, onSuccess, currentUserId = 1 }) => {
     e.target.value = ''; 
   };
 
-  const handleSubmit = async () => {
-    const filesToUpload = filesData.filter(f => f.status === 'Wait');
-    if (filesToUpload.length === 0 || !selectedVersion) return alert('กรุณาเตรียมไฟล์และเลือก Version');
-    setIsProcessing(true);
-    try {
-      setProgressMsg('Initializing Batch...');
-      const insertRes = await workspaceApi.insertImportInfo({
-        v_id: Number(selectedVersion), status: 1, 
-        description: selectedSystem === '1' ? 'POS' : 'DELIVERY', 
-        user_create: currentUserId
-      });
+  // const handleSubmit = async () => {
+  //   const filesToUpload = filesData.filter(f => f.status === 'Wait');
+  //   if (filesToUpload.length === 0 || !selectedVersions) return alert('กรุณาเตรียมไฟล์และเลือก Version');
+    
+  //   setIsProcessing(true);
+    
+  //   try {
+  //     setProgressMsg('Initializing Batch...');
+  //     const systemText = selectedSystem === '1' ? 'POS' : (selectedSystem === '2' ? 'DELIVERY' : selectedSystem);
       
-      const importId = insertRes.id;
-      for (let i = 0; i < filesData.length; i++) {
-        if (filesData[i].status === 'Wait') {
-          setProgressMsg(`Uploading: ${i + 1} / ${filesToUpload.length}`);
-          const formData = new FormData();
-          formData.append('version', importId); 
-          formData.append('system', selectedSystem);
-          formData.append('user_id', currentUserId);
-          formData.append('file', filesData[i].rawFile);
-          await workspaceApi.uploadAndImport(formData);
-          setFilesData(prev => {
-            const newData = [...prev]; newData[i].status = 'Success'; return newData;
-          });
-        }
-      }
-      setProgressMsg('Finishing...');
-      await workspaceApi.updateImportStatus({ id: importId, status: 3 });
-      setTimeout(() => { onSuccess(); onClose(); }, 500);
-    } catch (error) { alert('เกิดข้อผิดพลาดในการนำเข้า'); } 
-    finally { setIsProcessing(false); setProgressMsg(''); }
-  };
+  //     // 📍 1. สร้าง Record การนำเข้า (Insert Info)
+  //     await apiService.upload.insertInfo({
+  //       version_id: Number(selectedVersions), 
+  //       status: 1, 
+  //       description: systemText, 
+  //     });
+      
+  //     // 📍 2. Loop อัปโหลดทีละไฟล์
+  //     for (let i = 0; i < filesData.length; i++) {
+  //       if (filesData[i].status === 'Wait') {
+  //         setProgressMsg(`Uploading: ${i + 1} / ${filesToUpload.length}`);
+          
+  //         // 📍 เรียกใช้ uploadFileExcel (apiService จะจัดการ FormData ให้เองตามที่คุณเขียนไว้)
+  //         await apiService.upload.uploadFileExcel(selectedVersions, filesData[i].rawFile);
+          
+  //         setFilesData(prev => {
+  //           const newData = [...prev]; 
+  //           newData[i].status = 'Success'; 
+  //           return newData;
+  //         });
+  //       }
+  //     }
+      
+  //     setProgressMsg('Finishing...');
+      
+  //     setTimeout(() => { onSuccess(); onClose(); }, 500);
+      
+  //   } catch (error) { 
+  //     alert(`เกิดข้อผิดพลาดในการนำเข้า: ${error.message || 'Unknown error'}`); 
+  //   } finally { 
+  //     setIsProcessing(false); 
+  //     setProgressMsg(''); 
+  //   }
+  // };
+      const handleSubmit = async () => {
+          const filesToUpload = filesData.filter(f => f.status === 'Wait');
+          if (filesToUpload.length === 0 || !selectedVersions) return alert('กรุณาเตรียมไฟล์และเลือก Version');
+          setIsProcessing(true);
+          try {
+            setProgressMsg('Initializing Batch...');
+            const systemText = selectedSystem === '1' ? 'POS' : (selectedSystem === '2' ? 'DELIVERY' : selectedSystem);
+            const insertResponse = await apiService.upload.insertInfo({
+              version_id: Number(selectedVersions), 
+              status: 1, 
+              description: systemText, 
+            });
+            const newInsertId = insertResponse?.id || insertResponse?.data?.id; 
 
-  return (
+            if (!newInsertId) {
+                throw new Error('ไม่ได้รับรหัสอ้างอิง (ID) จากระบบ กรุณาลองใหม่อีกครั้ง');
+            }
+            for (let i = 0; i < filesData.length; i++) {
+              if (filesData[i].status === 'Wait') {
+                setProgressMsg(`Uploading: ${i + 1} / ${filesToUpload.length}`);
+                await apiService.upload.uploadFileExcel(newInsertId, filesData[i].rawFile);
+                setFilesData(prev => {
+                  const newData = [...prev]; 
+                  newData[i].status = 'Success'; 
+                  return newData;
+                });
+              }
+            }
+            setProgressMsg('Finishing...');
+            await apiService.upload.updatestatus(newInsertId);
+            setTimeout(() => { onSuccess(); onClose(); }, 500);
+          } catch (error) { 
+            alert(`เกิดข้อผิดพลาดในการนำเข้า: ${error.message || 'Unknown error'}`); 
+          } finally { 
+            setIsProcessing(false); 
+            setProgressMsg(''); 
+          }
+     };
+
+
+  
+    return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in">
       <div className="bg-white dark:bg-slate-900 w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95">
+        
+        {/* Header */}
         <div className="p-8 border-b dark:border-slate-800 flex justify-between items-center">
           <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">New Import</h2>
           <button onClick={!isProcessing ? onClose : undefined} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"><X size={24} /></button>
         </div>
+        
+        {/* Content */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+          
+          {/* Left Panel: Controls */}
           <div className="w-full md:w-80 p-8 border-r dark:border-slate-800 space-y-6 bg-slate-50/50 dark:bg-slate-900/50">
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Version</label>
-              <select value={selectedVersion} onChange={e => setSelectedVersion(e.target.value)} disabled={isProcessing} className="w-full bg-white dark:bg-slate-800 border-2 rounded-2xl p-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all">
+              <select value={selectedVersions} onChange={e => setSelectedVersion(e.target.value)} disabled={isProcessing} className="w-full bg-white dark:bg-slate-800 border-2 rounded-2xl p-3 text-sm font-bold outline-none focus:border-indigo-500 transition-all cursor-pointer">
                 {versions.map(v => <option key={v.id} value={v.id}>{v.title}</option>)}
               </select>
             </div>
+            
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">System</label>
               <div className="grid grid-cols-2 gap-2">
@@ -95,22 +165,38 @@ const ImportFileModal = ({ isOpen, onClose, onSuccess, currentUserId = 1 }) => {
                 ))}
               </div>
             </div>
+            
             <label className={`flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-3xl cursor-pointer hover:bg-indigo-50 transition-all ${isProcessing ? 'opacity-50 pointer-events-none' : 'border-indigo-200 bg-indigo-50/30'}`}>
               <CloudUpload size={32} className="text-indigo-500" />
+              <p className="mt-4 text-xs font-bold text-indigo-500">Click to Browse</p>
               <input type="file" multiple hidden onChange={handleFileChange} accept=".xls,.xlsx" />
             </label>
           </div>
+          
+          {/* Right Panel: File List */}
           <div className="flex-1 p-8 overflow-auto custom-scrollbar">
             {filesData.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-300"><FileSpreadsheet size={48} className="opacity-20 mb-2" /><p className="font-bold">No files selected</p></div>
+              <div className="flex flex-col items-center justify-center py-20 text-slate-300">
+                <FileSpreadsheet size={48} className="opacity-20 mb-2" />
+                <p className="font-bold">No files selected</p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {filesData.map((f, i) => (
                   <div key={i} className="flex items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border dark:border-slate-700">
-                    <span className="flex-1 font-bold text-sm truncate pr-4">{f.name}</span>
+                    <span className="flex-1 font-bold text-sm truncate pr-4 text-slate-700">{f.name}</span>
                     <div className="flex items-center gap-3">
-                      {f.status === 'Success' ? <CheckCircle2 size={18} className="text-emerald-500" /> : <span className="text-[9px] font-black uppercase text-amber-600">{f.status}</span>}
-                      {!isProcessing && f.status !== 'Success' && <button onClick={() => setFilesData(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-rose-500"><Trash2 size={16} /></button>}
+                      {f.status === 'Success' ? (
+                        <CheckCircle2 size={18} className="text-emerald-500" />
+                      ) : (
+                        <span className="text-[9px] font-black uppercase text-amber-600">{f.status}</span>
+                      )}
+                      
+                      {!isProcessing && f.status !== 'Success' && (
+                        <button onClick={() => setFilesData(prev => prev.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-rose-500 transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -118,13 +204,27 @@ const ImportFileModal = ({ isOpen, onClose, onSuccess, currentUserId = 1 }) => {
             )}
           </div>
         </div>
+        
+        {/* Footer */}
         <div className="p-8 bg-slate-50 dark:bg-slate-950 border-t dark:border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">{isProcessing && <><Loader2 size={20} className="animate-spin text-indigo-600" /><span className="text-sm font-bold text-indigo-600">{progressMsg}</span></>}</div>
+          <div className="flex items-center gap-3">
+            {isProcessing && (
+              <>
+                <Loader2 size={20} className="animate-spin text-indigo-600" />
+                <span className="text-sm font-bold text-indigo-600">{progressMsg}</span>
+              </>
+            )}
+          </div>
           <div className="flex gap-4">
-            <button onClick={onClose} disabled={isProcessing} className="px-6 py-4 text-slate-400 font-black text-sm">CANCEL</button>
-            <button onClick={handleSubmit} disabled={isProcessing || filesData.length === 0} className="px-10 py-4 bg-indigo-600 text-white font-black text-sm rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 disabled:opacity-50">START IMPORT</button>
+            <button onClick={onClose} disabled={isProcessing} className="px-6 py-4 text-slate-400 font-black text-sm hover:bg-slate-100 rounded-2xl transition-colors">
+              CANCEL
+            </button>
+            <button onClick={handleSubmit} disabled={isProcessing || filesData.length === 0} className="px-10 py-4 bg-indigo-600 text-white font-black text-sm rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 disabled:opacity-50 transition-all">
+              START IMPORT
+            </button>
           </div>
         </div>
+        
       </div>
     </div>
   );

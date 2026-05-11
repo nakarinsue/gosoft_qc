@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { UserPlus, Edit2, Trash2, Search, ShieldCheck, Mail, User, AlertCircle } from 'lucide-react';
 import UserModal from '../components/UserManagement/UserModal';
 
+// 📍 นำเข้า API Service กลาง
+import apiService from '../services/apiServices';
+
 export default function UserManagementScreen() {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -13,19 +16,15 @@ export default function UserManagementScreen() {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('V2/auth/users-all', {
-        method: 'GET',
-        headers: { 
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
+      // 📍 เรียกใช้งานผ่าน apiService.auth.getUsers() (ไม่ต้องแนบ Token เองแล้ว)
+      const response = await apiService.auth.getUsers();
+      
+      // ตัว Interceptor ของคุณมีการคืนค่า response.data ออกมาแล้ว
+      const data = response?.data || response || [];
       setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Fetch users error:", error);
+      alert(`ไม่สามารถโหลดข้อมูลผู้ใช้งานได้: ${error.message || ''}`);
     } finally {
       setIsLoading(false);
     }
@@ -37,12 +36,11 @@ export default function UserManagementScreen() {
   const handleDelete = async (userId, username) => {
     if (window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้ "${username}"?`)) {
       try {
-        const response = await fetch(`V2/auth/users/${userId}`, { method: 'DELETE' });
-        if (response.ok) {
-          fetchUsers(); // Refresh data
-        }
+        // 📍 เรียกใช้งานผ่าน apiService.auth.deleteUser()
+        await apiService.auth.deleteUser(userId);
+        fetchUsers(); // Refresh data
       } catch (error) {
-        alert("ลบข้อมูลไม่สำเร็จ");
+        alert(`ลบข้อมูลไม่สำเร็จ: ${error.message || ''}`);
       }
     }
   };
@@ -166,7 +164,6 @@ export default function UserManagementScreen() {
     </div>
   );
 }
-
 
 
 // import React, { useState, useEffect, useCallback } from 'react';

@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FileText, User, Lock, Loader2, FileBarChart, Check, ArrowRight } from 'lucide-react';
 
+// 📍 นำเข้า API Service กลาง
+import apiService from '../services/apiServices';
+
 export default function LoginScreen({ onLogin, onError, onViewChange }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -47,37 +50,18 @@ export default function LoginScreen({ onLogin, onError, onViewChange }) {
         localStorage.removeItem('remembered_creds');
       }
 
-      // 📍 เตรียมข้อมูลแบบ x-www-form-urlencoded (OAuth2 Standard)
-      const formData = new URLSearchParams();
-      formData.append('username', username);
-      formData.append('password', password);
-      formData.append('grant_type', '');
-      formData.append('scope', '');
-      formData.append('client_id', '');
-      formData.append('client_secret', '');
+      // 📍 เรียก API Login ผ่าน apiService กลาง (จัดการ OAuth2 Format ให้อัตโนมัติ)
+      const data = await apiService.auth.login(username, password);
 
-      // 📍 เรียก API Login ไปที่ Port 8001
-      const response = await fetch(`V2/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
-      }
-
-      const data = await response.json();
-
-      if (data.access_token) {
-        // 📍 บันทึก Token ลง Storage (Enterprise Standard)
+      if (data && data.access_token) {
+        // 📍 บันทึก Token และข้อมูลพื้นฐานลง Storage
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('token_type', data.token_type || 'bearer');
         localStorage.setItem('role', data.role || 'user');
+        
+        // ข้อมูลเพิ่มเติมถ้ามีจาก Backend
+        if (data.allmember) localStorage.setItem('allmember', data.allmember);
+        if (data.ip_address) localStorage.setItem('ip_address', data.ip_address);
 
         // แจ้ง Component แม่ว่า Login สำเร็จ
         onLogin({
@@ -90,7 +74,8 @@ export default function LoginScreen({ onLogin, onError, onViewChange }) {
 
     } catch (error) {
       console.error("Login Error:", error);
-      onError(error.message);
+      // ข้อความ Error จะถูกดึงมาจาก Interceptor ใน apiService
+      onError(error.message || 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
     } finally {
       setIsLoading(false);
     }

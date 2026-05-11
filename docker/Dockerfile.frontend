@@ -1,20 +1,27 @@
 FROM node:20-alpine AS build-stage
 WORKDIR /app
-COPY ./webpack/package.json ./
-RUN npm install
-COPY ./webpack .
-RUN npm run build
 
-# Stage 2: Serve
+# 1. แยกการติดตั้ง Dependencies เพื่อใช้ประโยชน์จาก Docker Cache
+COPY ./app/webpack/package*.json ./
+# ใช้ npm clean-install เพื่อความแม่นยำของเวอร์ชัน Library ในระดับองค์กร
+RUN npm ci 
+
+# 2. คัดลอกไฟล์ทั้งหมด
+COPY ./app/webpack .
+
+# 3. Build โปรเจกต์
+# CI=false ช่วยให้ Warning บางอย่างไม่ขัดขวางการ Build จนพัง
+RUN CI=false npm run build
 
 FROM nginx:stable-alpine
 
-COPY ./nginx/nginx.conf /etc/nginx/conf.d/default.conf
+# คัดลอกไฟล์ Configuration ของ Nginx (ต้องมั่นใจว่า path ถูกต้อง)
+COPY ./docker/nginx.conf /etc/nginx/conf.d/default.conf
 
-
+# คัดลอกไฟล์ที่ Build เสร็จแล้วจาก Stage แรก
+# ปกติ Vite จะ build ไปที่ /app/dist nginx -g daemon off;
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
-
 

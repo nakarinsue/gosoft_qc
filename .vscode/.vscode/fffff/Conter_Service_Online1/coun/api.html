@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enterprise UI Template</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+/* --- Base --- */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f6f9;
+}
+
+/* --- Container --- */
+.container-fluid {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* --- Card --- */
+.card {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+
+.card-header {
+  background-color: #0d6efd;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  padding: 0.5rem 0.75rem;
+}
+
+.card-body {
+  flex: 1 1 auto;
+  padding: 0.5rem 0.75rem;
+}
+
+/* --- Form --- */
+.form-label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.form-control {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+}
+
+/* --- Action Buttons --- */
+.action-buttons .btn {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  transition: 0.2s;
+}
+
+.action-buttons .btn:hover {
+  transform: scale(1.02);
+}
+
+/* --- Layout --- */
+.row-full {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.col-full {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+</style>
+</head>
+<body>
+
+<div class="container-fluid">
+
+  <!-- Top Section: CONNECTING + ACTION -->
+  <div class="row-full">
+    <div class="col-md-9 col-full">
+      <div class="card">
+        <div class="card-header">CONNECTING</div>
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-md-6"><label class="form-label">VERSION</label><input type="text" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">PROGRAM VERSION</label><input type="text" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">COMMAND</label><select class="form-control"><option>SELECT</option></select></div>
+            <div class="col-md-6"><label class="form-label">PROTOCOL</label><input type="text" class="form-control" value="HTTP"></div>
+            <div class="col-md-6"><label class="form-label">PORT</label><input type="text" class="form-control" value="8001"></div>
+            <div class="col-md-6"><label class="form-label">SERVICE</label><input type="text" class="form-control" value="CSWebServiceService"></div>
+            <div class="col-md-6"><label class="form-label">VENDOR ID</label><input type="text" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">SERVICE ID</label><input type="text" class="form-control"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 col-full">
+      <div class="card">
+        <div class="card-header">ACTION</div>
+        <div class="card-body action-buttons d-grid gap-2">
+          <button class="btn btn-primary">Inquiry</button>
+          <button class="btn btn-secondary">Reprint Slip</button>
+          <button class="btn btn-warning">Screenshot</button>
+          <button class="btn btn-success">Data Exchange</button>
+          <button class="btn btn-outline-primary">Exchange Confirm</button>
+          <button class="btn btn-danger">Cancel</button>
+          <button class="btn btn-dark">OR</button>
+          <button class="btn btn-outline-success">OR Confirm</button>
+          <button class="btn btn-outline-danger">OR Cancel</button>
+          <button class="btn btn-info">Full Form Exchange</button>
+          <button class="btn btn-primary">Full Form Confirm</button>
+          <button class="btn btn-danger">Full Form Cancel</button>
+          <button class="btn btn-dark">Full Form OR</button>
+          <button class="btn btn-outline-primary">Full Form OR Confirm</button>
+          <button class="btn btn-outline-danger">Full Form OR Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Middle Sections: 2-column grid per card -->
+  <div class="row-full">
+    ${['STORE','DATA','TRANSACTION','CUSTOMER PROFILE'].map(section => `
+      <div class="col-md-3 col-full">
+        <div class="card">
+          <div class="card-header">${section}</div>
+          <div class="card-body">
+            <div class="row g-2">
+              ${Array.from({length: section==='CUSTOMER PROFILE'?12:13}, (_, i) => `
+                <div class="col-md-6">
+                  <label class="form-label">${section.substring(0,4).toUpperCase()}_${i+1}</label>
+                  <input type="text" class="form-control">
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  </div>
+
+</div>
+
+</body>
+</html>

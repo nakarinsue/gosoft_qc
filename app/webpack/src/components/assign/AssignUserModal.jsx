@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { X, UserPlus, Trash2, CheckCircle2, Loader2 } from 'lucide-react';
 
+// --- นำเข้า API Service กลาง ---
+import apiService from '../../services/apiServices'; // ปรับ path ให้ตรงกับตำแหน่งไฟล์ของคุณ
+
 const AssignUserModal = ({ isOpen, onClose, onConfirm, allUsers = [] }) => {
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,19 +43,8 @@ const AssignUserModal = ({ isOpen, onClose, onConfirm, allUsers = [] }) => {
     
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch('/V2/import/Assign/user', { 
-        method: 'POST',
-                headers: { 'Accept'         : 'application/json',
-                    'Content-Type'  : 'application/json',
-                    'Authorization' : `Bearer ${token}`
-          },
-        body: JSON.stringify({ id: selectedUserIds }) 
-      });
-
-      if (!response.ok) throw new Error('Network response was not ok');
-      
-      const result = await response.json();
+      // 📍 เรียกใช้ API ผ่าน Service กลาง (จัดการ Header, Token และ Error ให้อัตโนมัติ)
+      const result = await apiService.workspace.assignUsersCalc(selectedUserIds);
       
       // Defensive: ตรวจสอบและดึง Array ออกมาเพื่อป้องกัน .some is not a function ในหน้าหลัก
       const dataToUpdate = Array.isArray(result) ? result : (result?.data || []);
@@ -63,7 +55,8 @@ const AssignUserModal = ({ isOpen, onClose, onConfirm, allUsers = [] }) => {
 
     } catch (error) {
       console.error('Error assigning users:', error);
-      alert('เกิดข้อผิดพลาดในการคำนวณการ Assign');
+      // แสดง Error Message ที่ดึงมาจาก Axios Interceptor กลางได้เลย
+      alert(error.message || 'เกิดข้อผิดพลาดในการคำนวณการ Assign');
     } finally {
       setIsSubmitting(false);
     }

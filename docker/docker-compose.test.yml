@@ -1,0 +1,167 @@
+name: promotion-test
+
+services:
+  # ==========================================
+  # TAILSCALE GATEWAY (TAILNET INTEGRATION)
+  # ==========================================
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale_gateway
+    hostname: promotion-apps-gateway # ชื่อที่จะไปโผล่ใน Tailscale Admin Console
+    restart: unless-stopped
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY} # ใส่ Auth key ชนิด Reusable/Ephemeral ใน .env
+      - TS_STATE_DIR=/var/lib/tailscale
+      # เปิด Subnet Router เพื่อให้คนใน Tailnet เข้าถึง Network ภายในชุดนี้ได้
+      - TS_EXTRA_ARGS=--advertise-routes=172.25.0.0/16 
+    volumes:
+      - tailscale_data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+      - sys_module
+    networks:
+      promotion-test_bridge_network:
+        ipv4_address: 172.25.0.254
+
+  # ==========================================
+  # APPLICATION SERVICES
+  # ==========================================
+  # backends:
+  #   build: 
+  #     context: ..
+  #     dockerfile: docker/Dockerfile.backend
+  #   image: nakarinsu/api_promotion:latest
+  #   pull_policy: build
+  #   platform: linux/amd64
+  #   hostname: api.promotion-css
+  #   container_name: api
+  #   restart: unless-stopped # แนะนำ unless-stopped มากกว่า always ใน Production
+  #   labels:
+  #     - portless.name=api
+  #   ports:
+  #     - "8000:8000" # Expose เฉพาะวงใน ป้องกันการเข้าถึงจาก Public IP
+  #   environment:
+  #     - TZ=Asia/Bangkok
+  #     - ENVIRONMENT=prod
+  #   volumes:
+  #     - backend_data:/var/opt/backends
+  #   depends_on:
+  #     mssqlservers:
+  #       condition: service_healthy
+  #     postgres:
+  #       condition: service_healthy
+  #   network_mode: "host"
+
+  #   stop_grace_period: 30s
+    
+  # frontends:
+  #   build:
+  #     context: ..
+  #     dockerfile: docker/Dockerfile.frontend
+  #   image: nakarinsu/web_promotion:latest
+  #   pull_policy: build
+  #   container_name: web
+  #   platform: linux/amd64
+  #   hostname: web.promotion-css
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - frontend_data:/var/opt/frontends    
+  #   depends_on:
+  #     - backends
+  #   network_mode: "host"
+
+    
+  # ==========================================
+  # DATABASE & STORAGE SERVICES
+  # ==========================================
+
+  mssqlservers:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssqlservers-server
+    hostname: mssqlservers
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      - ACCEPT_EULA=Y 
+      - MSSQL_SA_PASSWORD=${DB_SQL_PASSWORD}
+      - MSSQL_PID=Standard
+      - TZ=Asia/Bangkok
+    ports:
+      - "127.0.0.1:1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql        
+    network_mode: "host"
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${DB_SQL_PASSWORD}", "-Q", "SELECT 1", "-No"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-PROMOTION}
+      - TZ=Asia/Bangkok
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # แก้ไข Volume ที่ทับซ้อนกันแล้ว
+    networks:
+      - promotion-test_bridge_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-PROMOTION}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  minios:
+    image: minio/minio:latest
+    pull_policy: always
+    container_name: minio
+    hostname: minios
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "127.0.0.1:9000:9000" 
+      - "127.0.0.1:9001:9001" 
+    volumes:
+      - minio_data:/data # ใช้ Named volume ตามมาตรฐาน          
+    networks:
+      - promotion-test_bridge_network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+# ==========================================
+# NETWORKS & VOLUMES DEFINITION
+# ==========================================
+networks:
+  promotion-test_bridge_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+
+volumes:
+  tailscale_data:
+  backend_data:
+  frontend_data:
+  mssql_data:
+  postgres_data:
+  minio_data:

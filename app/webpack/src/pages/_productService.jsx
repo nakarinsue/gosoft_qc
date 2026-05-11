@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Search, Store, Barcode, Loader2, AlertCircle } from 'lucide-react';
-import { fetchProductDetail } from '../services/productService';
 import ProductDetailView from './_ProductDetailView'; // แยกส่วนแสดงผลไปไว้อีกไฟล์
+
+// 📍 นำเข้า API Service กลาง
+import apiService from '../services/apiServices';
 
 const ProductSearchPage = () => {
   // State สำหรับ Form
@@ -38,13 +40,14 @@ const ProductSearchPage = () => {
       setProductData(null);
 
       try {
-        // เรียกใช้ function ที่ปรับปรุงแล้ว
-        // ข้อมูล inputs.productCode จะถูกนำไปใส่ [] ใน service เอง
-        const result = await fetchProductDetail(inputs.storeId, inputs.productCode);
+        // 📍 เรียกใช้ function จาก Service กลาง 
+        // ฟังก์ชันนี้ถูกออกแบบให้ส่ง params เป็น (storeId, productCode) และจะถูกห่อเป็น Array ให้เองด้านใน
+        const result = await apiService.products.fetchDetail(inputs.storeId, inputs.productCode);
         
         setProductData(result);
       } catch (err) {
-        setError(err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อ");
+        // 📍 แสดง Error Message ที่ถูกดักจับและส่งมาจาก Axios Interceptor กลาง
+        setError(err.message || "เกิดข้อผิดพลาดในการค้นหาข้อมูล");
       } finally {
         setLoading(false);
       }

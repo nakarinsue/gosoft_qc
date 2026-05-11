@@ -5,6 +5,9 @@ import {
 } from 'lucide-react';
 import ImportFileModal from '../components/import/ImportFileModal'; 
 
+// 📍 นำเข้า API Service กลาง
+import apiService from '../services/apiServices'; 
+
 const transformApiDataToTableFormat = (apiData) => {
   if (!apiData || typeof apiData !== 'object') return [];
   return Object.values(apiData).map((group, index) => ({
@@ -41,18 +44,13 @@ export default function ImportExcelView({ selectedVersion }) {
       setIsLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`/V2/import/show/${selectedVersion}`, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json',
-                       'Authorization': `Bearer ${token}`
-             }
-        });
-        if (!response.ok) throw new Error(`Server status: ${response.status}`);
-        const result = await response.json();
-        if (result.success && result.data) {
-          setTableData(transformApiDataToTableFormat(result.data));
-        }
+        // 📍 เรียกใช้ API ผ่าน Service กลาง
+        // ใช้ endpoint สำหรับดึงข้อมูล Import (เช่น apiService.upload.getFileInformation)
+        const result = await apiService.upload.getFileInformation(selectedVersion);
+        
+        const dataToTransform = result?.data || result || {};
+        setTableData(transformApiDataToTableFormat(dataToTransform));
+
       } catch (err) {
         setError(err.message);
       } finally {
@@ -92,28 +90,16 @@ export default function ImportExcelView({ selectedVersion }) {
   const handleExport = async (e, fileId = 0, versionId = 0) => {
     e.stopPropagation();
     try {
-      const token = localStorage.getItem('access_token'); // ดึง Token
       const payload = {
         version_id: [versionId],
         file_id: [fileId]
       };
 
-      const response = await fetch('/V2/export/promotion-detail', { // ใช้ endpoint ตามที่คุณระบุ
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // แนบ Auth Header
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Export failed with status: ${response.status}`);
-      }
+      // 📍 เรียกใช้ API ผ่าน Service กลาง (ต้องตั้งค่า responseType: 'blob' ใน apiService)
+      // สมมติว่าสร้างฟังก์ชัน exportDetail ไว้ใน apiService.promotions
+      const blob = await apiService.promotions.exportDetail(payload);
 
       // จัดการ Blob และสร้างไฟล์ดาวน์โหลด
-      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; 

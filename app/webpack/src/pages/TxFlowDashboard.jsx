@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // ==========================================
-// 1. Widgets & Components (ใช้ชุดเดิม)
+// 1. Widgets & Components (UI Elements ย่อย)
 // ==========================================
 
 const InputWidget = ({ label, name, value, onChange, placeholder }) => (
@@ -25,7 +25,7 @@ const ButtonWidget = ({ label, onClick, variant = "primary" }) => {
     secondary: "bg-gray-600 text-white hover:bg-gray-700",
     success: "bg-green-600 text-white hover:bg-green-700",
     warning: "bg-amber-500 text-white hover:bg-amber-600",
-    outline: "border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+    outline: "border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200"
   };
   return (
     <button onClick={onClick} className={`${baseStyle} ${variants[variant]}`}>
@@ -36,7 +36,7 @@ const ButtonWidget = ({ label, onClick, variant = "primary" }) => {
 
 const JsonViewer = ({ title, data }) => (
   <div className="flex-1 flex flex-col h-full bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-700 overflow-hidden shadow-inner">
-    <div className="p-3 bg-gray-200 dark:bg-gray-800 font-semibold border-b dark:border-gray-700 text-sm flex justify-between items-center">
+    <div className="p-3 bg-gray-200 dark:bg-gray-800 font-semibold border-b dark:border-gray-700 text-sm flex justify-between items-center text-gray-800 dark:text-gray-200">
       <span>{title}</span>
     </div>
     <div className="flex-1 p-4 overflow-y-auto font-mono text-xs whitespace-pre-wrap text-gray-800 dark:text-green-400">
@@ -52,7 +52,7 @@ const DataTableWidget = ({ data }) => {
   return (
     <div className="flex-1 flex flex-col min-h-0 border dark:border-gray-700 rounded-lg overflow-hidden mt-4">
       <div className="overflow-x-auto overflow-y-auto flex-1">
-        <table className="min-w-full text-left text-sm whitespace-nowrap">
+        <table className="min-w-full text-left text-sm whitespace-nowrap text-gray-800 dark:text-gray-200">
           <thead className="sticky top-0 bg-gray-200 dark:bg-gray-800 shadow-sm z-10">
             <tr>
               {headers.map((head) => (
@@ -76,7 +76,7 @@ const DataTableWidget = ({ data }) => {
 };
 
 // ==========================================
-// 2. Main Layout (OmniTx Gateway)
+// 2. Main Component (OmniTx Gateway)
 // ==========================================
 
 export default function OmniTxGateway() {
@@ -84,7 +84,7 @@ export default function OmniTxGateway() {
   const [isLoading, setIsLoading] = useState(false);
   
   // URL ของ FastAPI Backend ของเรา
-  const API_BASE_URL = "http://localhost:8000/api";
+  const API_BASE_URL = "V2/API";
 
   const [inputs, setInputs] = useState({
     vendor_id: "0994000164904",
@@ -103,12 +103,20 @@ export default function OmniTxGateway() {
   const [responseData, setResponseData] = useState(null);
   const [viewMode, setViewMode] = useState('json');
 
+  // จัดการการเปลี่ยนธีมในระดับ Document (Tailwind Dark Mode)
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setInputs(prev => ({ ...prev, [name]: value }));
   };
 
-  // ฟังก์ชันยิง API ของจริง
   const handleAction = async (actionPath) => {
     setIsLoading(true);
     setResponseData(null);
@@ -117,18 +125,16 @@ export default function OmniTxGateway() {
     // จัดเตรียม Payload ให้ตรงกับเส้น API ที่เรียก
     let payload = {};
     if (actionPath === 'db/transaction') {
-      payload = { tx_id: inputs.tx_id }; // ใช้ TxIdRequest Model
+      payload = { tx_id: inputs.tx_id }; 
     } else if (actionPath === 'db/show') {
-      payload = { vendor_id: inputs.vendor_id, service_id: inputs.service_id }; // ใช้ ConfigRequest Model
+      payload = { vendor_id: inputs.vendor_id, service_id: inputs.service_id };
     } else {
-      // ใช้ ActionRequest Model สำหรับยิง SOAP / Workflow
-      payload = { url: "V1/Test/WSCDSService", ...inputs };
+      payload = { url: "http://localhost:80/Test/WSCDSService", ...inputs };
     }
 
     setRequestData({ endpoint: `${API_BASE_URL}/${actionPath}`, payload });
 
     try {
-      // เรียกใช้งาน API จริงผ่าน fetch
       const response = await fetch(`${API_BASE_URL}/${actionPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,10 +149,10 @@ export default function OmniTxGateway() {
 
       // แสดงผลตามประเภทของ Data
       if (actionPath === 'db/transaction' && data.data) {
-        setResponseData(data.data); // แปลงเป็น Table สำหรับโชว์ Database
+        setResponseData(data.data);
         setViewMode('table');
       } else {
-        setResponseData(data); // โชว์ JSON ปกติสำหรับ API Response และ Show Config
+        setResponseData(data);
       }
 
     } catch (error) {
@@ -160,19 +166,18 @@ export default function OmniTxGateway() {
     }
   };
 
-  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
   return (
     <div className={`h-screen w-full flex p-3 gap-3 transition-colors duration-300 ${theme === 'dark' ? 'bg-gray-950 text-gray-100' : 'bg-gray-100 text-gray-800'} overflow-hidden`}>
       
       {/* พาเนลซ้าย: Control Panel */}
       <div className="w-1/4 min-w-[350px] flex flex-col gap-3 h-full overflow-y-auto pr-1">
-        
         <div className="flex justify-between items-center px-2">
           <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
             OmniTx Gateway
           </h1>
-          <button onClick={toggleTheme} className="text-xs p-1.5 rounded-md border dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800">
+          <button onClick={toggleTheme} className="text-xs p-1.5 rounded-md border dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200">
             {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
           </button>
         </div>
@@ -218,7 +223,6 @@ export default function OmniTxGateway() {
              <ButtonWidget label="Search DB" onClick={() => handleAction('db/transaction')} variant="primary" />
            </div>
         </div>
-
       </div>
 
       {/* พาเนลขวา: Visualization */}
@@ -230,10 +234,10 @@ export default function OmniTxGateway() {
         <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 rounded-xl border dark:border-gray-800 shadow-sm p-4 relative overflow-hidden">
           {isLoading && (
             <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-20">
-              <span className="font-bold text-lg animate-pulse">Processing...</span>
+              <span className="font-bold text-lg animate-pulse text-gray-800 dark:text-gray-200">Processing...</span>
             </div>
           )}
-          <h2 className="text-sm font-bold border-b dark:border-gray-700 pb-2 mb-2 flex justify-between">
+          <h2 className="text-sm font-bold border-b dark:border-gray-700 pb-2 mb-2 flex justify-between text-gray-800 dark:text-gray-200">
             <span>📥 Result Output</span>
             <span className="text-xs font-normal text-gray-500">{viewMode.toUpperCase()}</span>
           </h2>
